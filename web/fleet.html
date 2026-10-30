@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fleet Relay Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="fleet-page">
+  <header class="topbar">
+    <div>
+      <h1>Food Delivery Route Optimizer <span class="sub">Fleet &amp; Relay Delivery</span>
+        <a class="navlink" href="index.html">&larr; Search visualizer</a></h1>
+      <p id="info" class="muted">Loading the real graph&hellip;</p>
+    </div>
+  </header>
+
+  <section class="card controls" aria-label="Simulation setup">
+    <div class="field">
+      <label class="label" for="drivers">Drivers</label>
+      <input id="drivers" type="number" min="1" max="200" value="25" class="num">
+    </div>
+    <div class="field">
+      <label class="label" for="orders">Orders (over 120 min)</label>
+      <input id="orders" type="number" min="1" max="300" value="100" class="num">
+    </div>
+    <div class="field">
+      <label class="label" for="seed">Seed</label>
+      <input id="seed" type="number" value="42" class="num">
+    </div>
+    <div class="field">
+      <span class="label">Show</span>
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="view" value="relay" checked> Relay</label>
+        <label><input type="radio" name="view" value="direct"> Direct</label>
+        <label><input type="radio" name="view" value="both"> Side by side</label>
+      </div>
+    </div>
+    <button id="runBtn" class="primary" type="button">Run Simulation</button>
+  </section>
+
+  <section class="card controls myorder" aria-label="Place your own order">
+    <div class="field">
+      <span class="label">Place your own order</span>
+      <span class="muted small">Choose where it comes from, where it goes and when.</span>
+    </div>
+    <div class="field grow">
+      <label class="label" for="myRestaurant">From restaurant</label>
+      <select id="myRestaurant"></select>
+    </div>
+    <div class="field grow">
+      <label class="label" for="mySociety">To housing society</label>
+      <select id="mySociety"></select>
+    </div>
+    <div class="field">
+      <label class="label" for="myMinute">Order at minute</label>
+      <input id="myMinute" type="number" min="0" max="120" step="1" value="12" class="num">
+    </div>
+    <button id="placeBtn" class="primary" type="button">Place order &amp; watch</button>
+    <button id="removeMyBtn" type="button" hidden>Remove my order</button>
+  </section>
+
+  <section class="card playback" aria-label="Playback controls">
+    <div class="btns">
+      <button id="restartBtn" type="button" title="Restart (R)">&#8635; Restart</button>
+      <button id="playBtn" type="button" title="Play / pause (Space)">&#9654; Play</button>
+    </div>
+    <div class="clock"><span class="muted">Minute</span> <b id="clock">0</b></div>
+    <input id="timeline" class="timeline" type="range" min="0" max="100" step="0.1" value="0" aria-label="Simulation time">
+    <label class="speed">Speed
+      <input id="speed" type="range" min="1" max="20" value="4">
+      <span id="speedLabel" class="muted">4 min/s</span>
+    </label>
+    <label class="check" title="Pause when a shared order is placed and again at its hand-off"><input id="pauseAtHandoff" type="checkbox" checked> Pause at sharing steps</label>
+    <label class="check" title="Fade drivers that are not part of the selected order"><input id="focusSel" type="checkbox" checked> Focus on selected order</label>
+    <label class="check" title="Needs internet; without it the plain graph is shown"><input id="streetMap" type="checkbox" checked> Street map</label>
+    <button id="fitAllBtn" type="button">Whole city</button>
+  </section>
+
+  <div id="error" class="error" role="alert" hidden></div>
+
+  <section id="story" class="card story" aria-live="polite">
+    <div class="story-head">
+      <b id="storyTitle">How sharing works</b>
+      <div class="btns track">
+        <label class="label" for="trackOrder">Track any order</label>
+        <input id="trackOrder" list="orderList" placeholder="e.g. O0004" autocomplete="off">
+        <button id="trackBtn" type="button">Track</button>
+        <datalist id="orderList"></datalist>
+      </div>
+      <div class="btns">
+        <button id="prevShared" type="button">&#9664; Previous shared order</button>
+        <button id="nextShared" type="button" class="primary">Next shared order &#9654;</button>
+      </div>
+    </div>
+    <ol id="storySteps" class="story-steps"></ol>
+    <p id="storyText" class="story-text"></p>
+  </section>
+
+  <section class="legend" aria-label="Legend">
+    <span><i class="dot drv-idle"></i>Driver idle</span>
+    <span><i class="dot drv-empty"></i>Going to pick up</span>
+    <span><i class="dot drv-wait"></i>Waiting (food / hand-off)</span>
+    <span><i class="dot drv-carry"></i>Carrying food</span>
+    <span><i class="dot drv-relay"></i>Carrying a handed-over order</span>
+    <span class="sep"></span>
+    <span><i class="dot pending"></i>New order (food being prepared)</span>
+    <span><i class="star">&#9733;</i>Hand-off point (faint = planned)</span>
+    <span class="sep"></span>
+    <b class="small">Selected order:</b>
+    <span><i class="foodkey">&#127857;</i>the food</span>
+    <span><i class="ln ahead"></i>road still ahead</span>
+    <span><i class="ln dashed"></i>driver A to restaurant</span>
+    <span><i class="ln carry"></i>A carries the food</span>
+    <span><i class="ln dotted"></i>B's own route (already passing)</span>
+    <span><i class="ln relay"></i>B carries it to the customer</span>
+  </section>
+
+
+  <main id="stage" class="stage single">
+    <div id="panels" class="panels">
+      <div class="card placeholder">Press <b>Run Simulation</b> to start.</div>
+    </div>
+    <aside class="sidebar">
+      <div class="card">
+        <h3>Direct vs relay (same orders and drivers)</h3>
+        <table class="cmp" id="metrics"></table>
+        <p class="muted small">Relay hands a long order to a driver whose route
+          already passes a point on the way. It is used only when the minutes
+          the first driver gets back are more than the second driver's extra
+          work plus any extra wait for customers.</p>
+      </div>
+      <div class="card" id="orderCard" hidden></div>
+      <div class="card">
+        <h3>Hand-offs <span class="muted" id="relayCount"></span></h3>
+        <ol class="relay-list" id="relayList"></ol>
+      </div>
+    </aside>
+  </main>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+  <script src="map.js"></script>
+  <script src="fleet.js"></script>
+</body>
+</html>
