@@ -48,10 +48,10 @@ from src.order import generate_orders
 
 FOOD_PREP_MIN = 10.0         # food is ready this long after the order
 HANDOFF_MIN = 2.0            # time to pass the food from A to B
-RELAY_MIN_TRIP_MIN = 15.0    # only orders with a longer R -> S trip are split
-MAX_A_WAIT_MIN = 10.0        # A waits at most this long at H for B
-MAX_B_WAIT_MIN = 5.0         # B waits at most this long at H for A
-MAX_EXTRA_DELAY_MIN = 10.0   # customer waits at most this much longer
+RELAY_MIN_TRIP_MIN = 8.0     # only orders with a longer R -> S trip are split
+MAX_A_WAIT_MIN = 15.0        # A waits at most this long at H for B
+MAX_B_WAIT_MIN = 10.0        # B waits at most this long at H for A
+MAX_EXTRA_DELAY_MIN = 15.0   # customer waits at most this much longer
 STRATEGIES = ("direct", "relay")
 CUSTOM_PREFIX = "MY"         # IDs of orders placed by the user: MY01, MY02, ...
 

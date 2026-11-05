@@ -120,6 +120,17 @@ function wireControls() {
   $("#trackBtn").addEventListener("click", () => trackOrder($("#trackOrder").value));
   $("#placeBtn").addEventListener("click", placeMyOrder);
   $("#removeMyBtn").addEventListener("click", removeMyOrder);
+  const presetSel = $("#presetRelayOrder");
+  if (presetSel) {
+    presetSel.addEventListener("change", (e) => {
+      const val = e.target.value;
+      if (!val) return;
+      const [r, s, m] = val.split(",");
+      $("#myRestaurant").value = r;
+      $("#mySociety").value = s;
+      $("#myMinute").value = m;
+    });
+  }
   $("#myMinute").addEventListener("keydown", (e) => { if (e.key === "Enter") placeMyOrder(); });
   $("#trackOrder").addEventListener("keydown", (e) => { if (e.key === "Enter") trackOrder(e.target.value); });
   document.querySelectorAll("input[name=view]").forEach((r) =>
@@ -173,8 +184,9 @@ async function runSimulation() {
     app.data[k].orders.map((o) => o.delivered)))) + 2;
   $("#timeline").max = app.tEnd;
   app.selected = null;
-  $("#orderList").innerHTML = app.data.relay.orders.map((o) =>
-    `<option value="${esc(o.id)} ${esc(o.r)} → ${esc(o.s)}${o.id.startsWith("MY") ? " (your order)" : ""}${o.h ? " (shared)" : ""}">`).join("");
+  const sortedOrders = [...app.data.relay.orders].sort((a, b) => (b.h ? 1 : 0) - (a.h ? 1 : 0));
+  $("#orderList").innerHTML = sortedOrders.map((o) =>
+    `<option value="${esc(o.id)} ${esc(o.r)} → ${esc(o.s)}${o.h ? " 🤝 [SHARED - 2 DRIVERS]" : ""}${o.id.startsWith("MY") ? " (your order)" : ""}">`).join("");
   buildPanels();
   renderMetrics();
   renderRelayList();
